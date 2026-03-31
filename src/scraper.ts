@@ -111,7 +111,7 @@ export async function scrapeComic(
 
   try {
     console.log(`Navigating to: ${url}`);
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 60_000 });
+    await page.goto(url, { timeout: 60_000 });
 
     console.log("Waiting for #divImage to appear...");
     await page.waitForSelector("#divImage", { timeout: 30_000 });
