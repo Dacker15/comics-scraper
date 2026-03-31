@@ -1,7 +1,7 @@
-import puppeteer, { Page } from "puppeteer-core";
+import puppeteer, { BrowserContext, Page } from "puppeteer-core";
 
 const STABILITY_ATTEMPTS = 10;
-const SCROLL_STEP_PX = 500;
+const SCROLL_STEP_PX = 700;
 const SCROLL_INTERVAL_MS = 2_000;
 
 function delay(ms: number): Promise<void> {
@@ -75,6 +75,14 @@ async function getImageUrls(page: Page): Promise<string[]> {
   });
 }
 
+export async function getBrowserInstance() {
+  const browser = await puppeteer.connect({
+    protocol: "webDriverBiDi",
+    browserWSEndpoint: "ws://127.0.0.1:9222/session",
+  });
+  return browser.defaultBrowserContext();
+}
+
 /**
  * Downloads a single image using the browser's fetch (preserving cookies/session).
  * Returns the image as a Buffer, or null if the download fails.
@@ -92,19 +100,16 @@ async function downloadImage(url: string): Promise<Buffer | null> {
   }
 }
 
-export async function scrapeComic(url: string): Promise<Buffer[]> {
-  const browser = await puppeteer.connect({
-    protocol: "webDriverBiDi",
-    browserWSEndpoint: "ws://127.0.0.1:9222/session",
+export async function scrapeComic(
+  context: BrowserContext,
+  url: string,
+): Promise<Buffer[]> {
+  const page = await context.newPage({
+    type: "tab",
+    background: false,
   });
 
   try {
-    const context = browser.defaultBrowserContext();
-    const page = await context.newPage({
-      type: "tab",
-      background: false,
-    });
-
     console.log(`Navigating to: ${url}`);
     await page.goto(url, { waitUntil: "networkidle2", timeout: 60_000 });
 
@@ -138,6 +143,6 @@ export async function scrapeComic(url: string): Promise<Buffer[]> {
 
     return images;
   } finally {
-    await browser.close();
+    await page.close();
   }
 }

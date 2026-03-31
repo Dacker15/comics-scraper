@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { scrapeComic } from './scraper';
+import { getBrowserInstance, scrapeComic } from './scraper';
 import { createPDF } from './pdf';
+import { BrowserContext } from 'puppeteer-core';
 
 const OUTPUT_DIR = 'outputs';
 
@@ -20,7 +21,7 @@ function extractComicName(url: string): string {
   return match[1].replace(/\//g, '-');
 }
 
-async function processUrl(url: string): Promise<void> {
+async function processUrl(context: BrowserContext, url: string): Promise<void> {
   const comicName = extractComicName(url);
   const outputPath = path.join(OUTPUT_DIR, `Comic-${comicName}.pdf`);
 
@@ -29,7 +30,7 @@ async function processUrl(url: string): Promise<void> {
   console.log(`Output: ${outputPath}`);
   console.log('='.repeat(60));
 
-  const images = await scrapeComic(url);
+  const images = await scrapeComic(context, url);
 
   if (images.length === 0) {
     console.warn('No images downloaded — skipping PDF generation.');
@@ -58,7 +59,9 @@ async function main(): Promise<void> {
   }
 
   if (!Array.isArray(urls) || urls.length === 0) {
-    console.error('The input file must contain a non-empty JSON array of URLs.');
+    console.error(
+      'The input file must contain a non-empty JSON array of URLs.',
+    );
     process.exit(1);
   }
 
@@ -66,13 +69,17 @@ async function main(): Promise<void> {
 
   console.log(`Processing ${urls.length} comic(s)...\n`);
 
+  const context = await getBrowserInstance();
+
   for (const url of urls) {
     try {
-      await processUrl(url);
+      await processUrl(context, url);
     } catch (err) {
       console.error(`Error processing ${url}:`, err);
     }
   }
+
+  await context.browser().close();
 
   console.log('Done.');
 }
