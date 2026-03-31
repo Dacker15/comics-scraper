@@ -1,7 +1,7 @@
 import puppeteer, { BrowserContext, Page } from 'puppeteer-core'
 
 const STABILITY_ATTEMPTS = 10
-const SCROLL_STEP_PX = 700
+const SCROLL_STEP_PX = 500
 const SCROLL_INTERVAL_MS = 2_000
 
 function delay(ms: number): Promise<void> {
@@ -37,7 +37,7 @@ async function waitForAllImages(page: Page): Promise<void> {
   let previousHeight = -1
 
   console.log(
-    'Waiting for all images to load (scrolling 100px every 2s until stable)...',
+    `Waiting for all images to load (scrolling ${SCROLL_STEP_PX}px every ${SCROLL_INTERVAL_MS / 1000}s until stable)...`,
   )
 
   while (stableCount < STABILITY_ATTEMPTS) {
