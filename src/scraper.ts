@@ -1,28 +1,28 @@
-import puppeteer, { BrowserContext, Page } from "puppeteer-core";
+import puppeteer, { BrowserContext, Page } from 'puppeteer-core'
 
-const STABILITY_ATTEMPTS = 10;
-const SCROLL_STEP_PX = 700;
-const SCROLL_INTERVAL_MS = 2_000;
+const STABILITY_ATTEMPTS = 10
+const SCROLL_STEP_PX = 700
+const SCROLL_INTERVAL_MS = 2_000
 
 function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 async function getChildrenCount(page: Page): Promise<number> {
   return page.evaluate(() => {
-    const div = document.getElementById("divImage");
-    return div ? div.children.length : 0;
-  });
+    const div = document.getElementById('divImage')
+    return div ? div.children.length : 0
+  })
 }
 
 async function getPageHeight(page: Page): Promise<number> {
-  return page.evaluate(() => document.body.scrollHeight);
+  return page.evaluate(() => document.body.scrollHeight)
 }
 
 async function scrollBy(page: Page, pixels: number): Promise<void> {
   await page.evaluate((px: number) => {
-    window.scrollBy(0, px);
-  }, pixels);
+    window.scrollBy(0, px)
+  }, pixels)
 }
 
 /**
@@ -32,55 +32,55 @@ async function scrollBy(page: Page, pixels: number): Promise<void> {
  * considered complete.
  */
 async function waitForAllImages(page: Page): Promise<void> {
-  let stableCount = 0;
-  let previousCount = -1;
-  let previousHeight = -1;
+  let stableCount = 0
+  let previousCount = -1
+  let previousHeight = -1
 
   console.log(
-    "Waiting for all images to load (scrolling 100px every 2s until stable)...",
-  );
+    'Waiting for all images to load (scrolling 100px every 2s until stable)...',
+  )
 
   while (stableCount < STABILITY_ATTEMPTS) {
-    await scrollBy(page, SCROLL_STEP_PX);
-    await delay(SCROLL_INTERVAL_MS);
+    await scrollBy(page, SCROLL_STEP_PX)
+    await delay(SCROLL_INTERVAL_MS)
 
-    const currentCount = await getChildrenCount(page);
-    const currentHeight = await getPageHeight(page);
+    const currentCount = await getChildrenCount(page)
+    const currentHeight = await getPageHeight(page)
 
     if (currentCount === previousCount && currentHeight === previousHeight) {
-      stableCount++;
+      stableCount++
       console.log(
         `  [${new Date().toLocaleTimeString()}] Children: ${currentCount}, Height: ${currentHeight}px — stable ${stableCount}/${STABILITY_ATTEMPTS}`,
-      );
+      )
     } else {
-      stableCount = 0;
-      previousCount = currentCount;
-      previousHeight = currentHeight;
+      stableCount = 0
+      previousCount = currentCount
+      previousHeight = currentHeight
       console.log(
         `  [${new Date().toLocaleTimeString()}] Children: ${currentCount}, Height: ${currentHeight}px — changed, resetting counter`,
-      );
+      )
     }
   }
 
-  console.log(`All images loaded: ${previousCount} pages found.`);
+  console.log(`All images loaded: ${previousCount} pages found.`)
 }
 
 async function getImageUrls(page: Page): Promise<string[]> {
   return page.evaluate(() => {
-    const div = document.getElementById("divImage");
-    if (!div) return [];
-    return Array.from(div.querySelectorAll("img")).map(
+    const div = document.getElementById('divImage')
+    if (!div) return []
+    return Array.from(div.querySelectorAll('img')).map(
       (img) => (img as HTMLImageElement).src,
-    );
-  });
+    )
+  })
 }
 
 export async function getBrowserInstance() {
   const browser = await puppeteer.connect({
-    protocol: "webDriverBiDi",
-    browserWSEndpoint: "ws://127.0.0.1:9222/session",
-  });
-  return browser.defaultBrowserContext();
+    protocol: 'webDriverBiDi',
+    browserWSEndpoint: 'ws://127.0.0.1:9222/session',
+  })
+  return browser.defaultBrowserContext()
 }
 
 /**
@@ -89,14 +89,14 @@ export async function getBrowserInstance() {
  */
 async function downloadImage(url: string): Promise<Buffer | null> {
   try {
-    const response = await fetch(url, { credentials: "include" });
+    const response = await fetch(url, { credentials: 'include' })
     if (!response.ok) {
-      return null;
+      return null
     }
-    return Buffer.from(await response.arrayBuffer());
+    return Buffer.from(await response.arrayBuffer())
   } catch (error) {
-    console.error(`Errore durante il download di ${url}:`, error);
-    return null;
+    console.error(`Errore durante il download di ${url}:`, error)
+    return null
   }
 }
 
@@ -105,44 +105,44 @@ export async function scrapeComic(
   url: string,
 ): Promise<Buffer[]> {
   const page = await context.newPage({
-    type: "tab",
+    type: 'tab',
     background: false,
-  });
+  })
 
   try {
-    console.log(`Navigating to: ${url}`);
-    await page.goto(url, { timeout: 60_000 });
+    console.log(`Navigating to: ${url}`)
+    await page.goto(url, { timeout: 60_000 })
 
-    console.log("Waiting for #divImage to appear...");
-    await page.waitForSelector("#divImage", { timeout: 30_000 });
+    console.log('Waiting for #divImage to appear...')
+    await page.waitForSelector('#divImage', { timeout: 30_000 })
 
-    await waitForAllImages(page);
+    await waitForAllImages(page)
 
-    console.log("Collecting image URLs...");
-    const imageUrls = await getImageUrls(page);
-    console.log(`Found ${imageUrls.length} images.`);
+    console.log('Collecting image URLs...')
+    const imageUrls = await getImageUrls(page)
+    console.log(`Found ${imageUrls.length} images.`)
 
     if (imageUrls.length === 0) {
-      console.warn("No images found inside #divImage > p > img");
-      return [];
+      console.warn('No images found inside #divImage > p > img')
+      return []
     }
 
-    const images: Buffer[] = [];
+    const images: Buffer[] = []
     for (let i = 0; i < imageUrls.length; i++) {
       process.stdout.write(
         `  Downloading image ${i + 1}/${imageUrls.length}...\r`,
-      );
-      const buffer = await downloadImage(imageUrls[i]);
+      )
+      const buffer = await downloadImage(imageUrls[i])
       if (buffer) {
-        images.push(buffer);
+        images.push(buffer)
       } else {
-        console.warn(`\n  Failed to download: ${imageUrls[i]}`);
+        console.warn(`\n  Failed to download: ${imageUrls[i]}`)
       }
     }
-    process.stdout.write("\n");
+    process.stdout.write('\n')
 
-    return images;
+    return images
   } finally {
-    await page.close();
+    await page.close()
   }
 }
