@@ -22,7 +22,7 @@ function extractComicName(url: string): string {
 }
 
 function removeCommentedUrls(urls: string[]) {
-  return urls.filter((url) => url.startsWith('_'))
+  return urls.filter((url) => !url.startsWith('_'))
 }
 
 async function processUrl(context: BrowserContext, url: string): Promise<void> {
