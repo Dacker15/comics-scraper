@@ -21,6 +21,10 @@ function extractComicName(url: string): string {
   return match[1].replace(/\//g, '-')
 }
 
+function removeCommentedUrls(urls: string[]) {
+  return urls.filter((url) => url.startsWith('_'))
+}
+
 async function processUrl(context: BrowserContext, url: string): Promise<void> {
   const comicName = extractComicName(url)
   const outputPath = path.join(OUTPUT_DIR, `Comic-${comicName}.pdf`)
@@ -57,6 +61,8 @@ async function main(): Promise<void> {
     console.error(`Failed to parse ${inputFile}:`, err)
     process.exit(1)
   }
+
+  urls = removeCommentedUrls(urls)
 
   if (!Array.isArray(urls) || urls.length === 0) {
     console.error('The input file must contain a non-empty JSON array of URLs.')

@@ -32,3 +32,8 @@ If you want to specify a custom input file, use the following command:
 ```powershell
 npm run dev -- path/to/your/input.json
 ```
+
+## Tips
+
+If you do not want to remove URLs from your list, simply add an `_` before.  
+This will prevent the script from processing those URLs while keeping them in the list for future reference.
