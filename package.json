@@ -1,0 +1,25 @@
+{
+  "name": "comics-scraper",
+  "version": "0.1.0",
+  "description": "An app to extract images from a comics website",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "author": "Davide Barbagallo",
+  "license": "ISC",
+  "dependencies": {
+    "@ghostery/adblocker-puppeteer": "^2.14.1",
+    "patch-package": "^8.0.1",
+    "pdf-lib": "^1.17.1",
+    "puppeteer-core": "^24.40.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.15",
+    "prettier": "^3.8.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
